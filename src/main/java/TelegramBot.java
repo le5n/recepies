@@ -27,7 +27,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
-        if(message.getText().equals("/start")){
+        if (message.getText().equals("/start")) {
             sendMsg(message, "Привет, я тупенький бот, который ищет вегетерианские рецепты по наименованию игредиента. Не надо писать мне больше одного слова, задавать вопросы и т.д. Я с этим не справлюсь. Короче, одно слово, желательно какой-то продукт и я кину ссылочку на рандомный рецепт с этим продуктом");
         }
         System.out.println(message.getContact());
@@ -37,9 +37,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         String text = message.getText();
         ReceiptSearcher searcher = new ReceiptSearcher();
         try {
-            if (message.getFrom().getId()==43036486){
+            if (message.getFrom().getId() == 43036486) {
                 String messageText = message.getText();
-                String keyword  = "";
+                String keyword = "";
                 Pattern wordPattern = Pattern.compile("(\\S+)$");
                 Matcher wordMatcher = wordPattern.matcher(messageText);
                 if (wordMatcher.find()) {
@@ -66,6 +66,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
                 sendMsg(message, xye);
                 System.out.println(xye);
+            } else if (message.getFrom().getId() == 30200603) {
+                sendMsg(message, "Миленка ты супер пупер!");
+                sendMsg(message, searcher.getRandomReceipt(text));
             } else {
                 sendMsg(message, searcher.getRandomReceipt(text));
             }

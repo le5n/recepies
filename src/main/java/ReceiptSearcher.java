@@ -23,7 +23,7 @@ public class ReceiptSearcher {
     private final String USER_AGENT = "Mozilla/5.0";
 
     public String getRandomReceipt(String keyWord) throws IOException, ParserException {
-        HttpURLConnection con = sendGet("https://www.googleapis.com/customsearch/v1?key=AIzaSyDmuS51uSVl5AB1G6xYbooTIyPQESRyi-U&cx=000128958346218832896:x0xru7tbm8o&q=" + keyWord);
+        HttpURLConnection con = sendGet("https://www.googleapis.com/customsearch/v1?key=AIzaSyDmuS51uSVl5AB1G6xYbooTIyPQESRyi-U&cx=000128958346218832896:x0xru7tbm8o&q=\"" + keyWord + "\"");
 
         List<String> linksOnPage = getLinksOnPage(mapResults(con), keyWord);
         if (linksOnPage.size() < 1) {
