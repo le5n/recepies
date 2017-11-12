@@ -10,6 +10,9 @@ import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 
 import java.io.IOException;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 /**
  * @author Elena_Georgievskaia
  * @since 07-Nov-17.
@@ -36,16 +39,71 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             if (message.getFrom().getId()==43036486){
                 String messageText = message.getText();
-                String reply = messageText.substring(2, messageText.length());
-                String xye = "хую" + reply;
+                String keyword  = "";
+                Pattern wordPattern = Pattern.compile("(\\S+)$");
+                Matcher wordMatcher = wordPattern.matcher(messageText);
+                if (wordMatcher.find()) {
+                    keyword = wordMatcher.group();
+                }
+                Integer keywordLength = keyword.length();
+                String xye;
+                if (keywordLength <= 3) {
+                    Pattern firstIsVowel = Pattern.compile("^[аеёийоуэюя]");
+                    Matcher matcher = firstIsVowel.matcher(keyword);
+                    if (matcher.find()) {
+                        xye = getXyefication(keyword, 0);
+                    } else {
+                        xye = getDefaultXyefication(keyword);
+                    }
+                } else {
+                    Pattern includesVowel = Pattern.compile("[аеёийоуэюя]\\B");
+                    Matcher matcher = includesVowel.matcher(keyword);
+                    if (matcher.find()) {
+                        xye = getXyefication(keyword, matcher.start());
+                    } else {
+                        xye = getDefaultXyefication(keyword);
+                    }
+                }
                 sendMsg(message, xye);
                 System.out.println(xye);
-            }else {
+            } else {
                 sendMsg(message, searcher.getRandomReceipt(text));
             }
         } catch (IOException | ParserException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getDefaultXyefication(String word) {
+        return "хуе" + word;
+    }
+
+    private String getXyefication(String word, Integer vowelIndex) {
+        char vowel = word.charAt(vowelIndex);
+        return getPrefix(vowel) + word.substring(vowelIndex + 1);
+    }
+
+    private String getPrefix(char vowelLetter) {
+        char fixedVowel;
+        switch (vowelLetter) {
+            case 'a':
+                fixedVowel = 'я';
+                break;
+            case 'э':
+            case 'ё':
+            case 'й':
+            case 'о':
+                fixedVowel = 'е';
+                break;
+            case 'у':
+                fixedVowel = 'ю';
+                break;
+            default:
+                fixedVowel = vowelLetter;
+                break;
+        }
+
+        return "ху" + fixedVowel;
     }
 
     @Override
