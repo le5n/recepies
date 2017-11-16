@@ -2,7 +2,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import model.GoogleCustomApiResult;
 import model.GoogleResponse;
-import org.apache.commons.lang3.StringUtils;
 import org.htmlparser.Parser;
 import org.htmlparser.filters.NodeClassFilter;
 import org.htmlparser.tags.LinkTag;
@@ -15,6 +14,9 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static model.SitesEnum.EDA_RU;
+import static model.SitesEnum.VEGETARIAN_RU;
+
 /**
  * @author Elena_Georgievskaia
  * @since 19-Oct-17.
@@ -25,12 +27,27 @@ public class ReceiptSearcher {
     public String getRandomReceipt(String keyWord) throws IOException, ParserException {
         HttpURLConnection con = sendGet("https://www.googleapis.com/customsearch/v1?key=AIzaSyDmuS51uSVl5AB1G6xYbooTIyPQESRyi-U&cx=000128958346218832896:x0xru7tbm8o&q=\"" + keyWord + "\"");
 
-        List<String> linksOnPage = getLinksOnPage(mapResults(con), keyWord);
-        if (linksOnPage.size() < 1) {
+        List<GoogleCustomApiResult> pages = mapResults(con);
+        String result;
+
+        if (pages.size() < 1) {
             return "Не удалось ничего найти";
         }
-        int randomInt = new Random().nextInt(linksOnPage.size());
-        return linksOnPage.get(randomInt);
+
+        Random random = new Random();
+        String link = pages.get(random.nextInt(pages.size())).getLink();
+
+        if (link.contains(VEGETARIAN_RU.getUrl())) {
+            result = link;
+        } else if (link.contains(EDA_RU.getUrl())) {
+            Map<String, String> pageLinksMap = getPageLinksMap(link);
+            List<String> validResults = filterLinksByKeyWord(keyWord, pageLinksMap.keySet());
+            result = pageLinksMap.get(validResults.get(random.nextInt(validResults.size())));
+
+        } else {
+            result = "Не удалось ничего найти";
+        }
+        return result;
     }
 
     private HttpURLConnection sendGet(String url) throws IOException {
@@ -41,28 +58,6 @@ public class ReceiptSearcher {
         return con;
     }
 
-    private List<String> getLinksOnPage(List<GoogleCustomApiResult> pages, String keyWord) throws ParserException {
-        List<String> recepiesLinks = new ArrayList<>();
-
-        for (GoogleCustomApiResult item : pages) {
-            String link = item.getLink();
-            Map<String, String> linksOnPage = getPageLinksMap(link);
-            Set<String> set = filterLinksByKeyWord(keyWord, linksOnPage.keySet());
-
-            for (String elem : set) {
-                String url = linksOnPage.get(elem);
-                String[] splitUrl = url.split("/");
-                String tail = splitUrl[splitUrl.length - 1];
-                if (tail.length() > 5) {
-                    String[] tailNumber = tail.split("-");
-                    String targetPart = tailNumber[tailNumber.length - 1];
-                    if (StringUtils.isNumeric(targetPart))
-                        recepiesLinks.add(url);
-                }
-            }
-        }
-        return recepiesLinks;
-    }
 
     private Map<String, String> getPageLinksMap(final String url) {
         Parser htmlParser = null;
@@ -97,7 +92,7 @@ public class ReceiptSearcher {
         return jsonMap.getItems();
     }
 
-    private Set<String> filterLinksByKeyWord(String word, Set<String> keys) {
-        return keys.stream().filter(k -> k.contains(word.substring(0, word.length() - 3))).collect(Collectors.toSet());
+    private List<String> filterLinksByKeyWord(String word, Set<String> keys) {
+        return keys.stream().filter(k -> k.contains(word.substring(0, word.length() - 3))).collect(Collectors.toList());
     }
 }
